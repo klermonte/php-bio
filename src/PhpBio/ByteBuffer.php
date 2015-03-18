@@ -91,12 +91,48 @@ class ByteBuffer
 
     /**
      * @param string $bytes
-     * @return int
+     * @return $this
      */
     public function write($bytes)
     {
         $this->position += strlen($bytes);
-        return fwrite($this->handle, $bytes);
+        fwrite($this->handle, $bytes);
+        return $this;
+    }
+
+    public function readInt($bytes = 1, $signed = false, $endian = 'm')
+    {
+        $bytes = min($bytes, 8);
+
+        if ($bytes > 4 && !$this->can64()) {
+            throw new \LengthException('Your system not support 64 bit integers.');
+        }
+
+        return Packer::unpack(
+            Packer::getFormat('int', $bytes * 8, $signed, $endian),
+            $this->read($bytes)
+        );
+    }
+
+    public function writeInt($data, $bytes = 1, $endian = 'm')
+    {
+        $bytes = min($bytes, 8);
+
+        if ($bytes > 4 && !$this->can64()) {
+            throw new \LengthException('Your system not support 64 bit integers.');
+        }
+
+        $str = Packer::pack(
+            Packer::getFormat('int', $bytes * 8, false, $endian),
+            $data
+        );
+
+        return $this->write($str);
+    }
+
+    protected function can64()
+    {
+        return PHP_INT_SIZE == 8;
     }
 
 }
