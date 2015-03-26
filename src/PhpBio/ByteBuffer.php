@@ -100,6 +100,12 @@ class ByteBuffer
         return $this;
     }
 
+    /**
+     * @param int $bytes
+     * @param bool $signed
+     * @param string $endian
+     * @return int
+     */
     public function readInt($bytes = 1, $signed = false, $endian = 'm')
     {
         $bytes = min($bytes, 8);
@@ -108,12 +114,20 @@ class ByteBuffer
             throw new \LengthException('Your system not support 64 bit integers.');
         }
 
+        $data = $this->fitTo($this->read($bytes), $this->getFullSize($bytes), $endian);
+
         return Packer::unpack(
             Packer::getFormat('int', $bytes * 8, $signed, $endian),
-            $this->read($bytes)
+            $data
         );
     }
 
+    /**
+     * @param int $data
+     * @param int $bytes
+     * @param string $endian
+     * @return ByteBuffer
+     */
     public function writeInt($data, $bytes = 1, $endian = 'm')
     {
         $bytes = min($bytes, 8);
@@ -133,6 +147,32 @@ class ByteBuffer
     protected function can64()
     {
         return PHP_INT_SIZE == 8;
+    }
+
+    /**
+     * @param string $data
+     * @param int $fullSize
+     * @param string $endian
+     * @return string
+     */
+    protected function fitTo($data, $fullSize, $endian)
+    {
+        return str_pad($data, $fullSize, "\x00", $endian == 'b' ? STR_PAD_LEFT : STR_PAD_RIGHT);
+    }
+
+    /**
+     * @param string $bytes
+     * @return int
+     */
+    protected function getFullSize($bytes)
+    {
+        if ($bytes > 4) {
+            return 8;
+        } elseif ($bytes > 2) {
+            return 4;
+        }
+
+        return $bytes;
     }
 
 }
