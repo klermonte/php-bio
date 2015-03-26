@@ -55,54 +55,79 @@ class BitBuffer extends ByteBuffer
     }
     
 
-    public function readInt($bits = 8, $signed = false, $endian = 'm')
+    public function readInt($bitsToRead = 8, $signed = false, $endian = 'm')
     {
-        if ($bits > 64) {
+        if ($bitsToRead > 64) {
             throw new \LengthException("Can't read integer larger 64 bit.");
         }
 
-        if ($bits > 32 && !parent::can64()) {
+        if ($bitsToRead > 32 && !parent::can64()) {
             throw new \LengthException('Your system not support 64 bit integers.');
         }
 
-        $shift = $this->getShift();
-        $lastByte = $this->getLastByte();
-        
-        if (!($bits % 8) && !$shift) {
-            return parent::readInt($bits / 8, $signed, $endian);
+        if ($endian == 'm') {
+            $endian = $this->getMachineEndian();
         }
 
-
-
+        $shift = $this->getShift();
         $bitsLeft = 8 - $shift;
+        $highByteSize = $bitsToRead % 8;
 
-        if ($bitsLeft < $bits) {
+        if (!$highByteSize && !$shift) {
+            return parent::readInt($bitsToRead / 8, $signed, $endian);
+        }
 
-            $bytesToRead = (int) ceil(($bits - $bitsLeft) / 8);
-            $readBytes = $this->read($bytesToRead);
+        if (!$shift) {
+            $lastByte = ord($this->read(1));
+        } else {
+            $lastByte = $this->getLastByte();
+        }
 
-            if ($endian == 'l') {
+        $bytesToRead = (int) ceil(($bitsToRead - $bitsLeft) / 8);
 
-                $newStr = '';
-                foreach (str_split($readBytes) as $i => $byte) {
-
-                    $highBits = ($lastByte & Mask::$rightMask[$shift]) << $shift;
-                    $lastByte = ord($byte);
-                    $newByte = $highBits | ($lastByte >> $bitsLeft);
-                    $newStr .= chr($newByte);
-
-                }
-
-                $lowBitsOfHighByte = $bits % 8;
-
-                if ($lowBitsOfHighByte) {
-                    $newStr .= ord(($lastByte << $shift) >> (8 - $lowBitsOfHighByte));
-                }
+        $sourceBytes = [$lastByte];
+        if ($bytesToRead) {
+            foreach (str_split($this->read($bytesToRead)) as $byte) {
+                $sourceBytes[] = ord($byte);
             }
         }
 
+        $readBits = 0;
+        $currentByte = null;
+        $newStr = '';
+        while ($readBits < $bitsToRead) {
 
+            if ($currentByte === null) {
+                $currentByte = array_shift($sourceBytes);
+            }
 
+            $batchSize = 8;
+            if ($highByteSize && (($endian == 'b' && !$readBits) || ($endian == 'l' && ($bitsToRead - $readBits) < 8))) {
+                $batchSize = $highByteSize;
+            }
 
+            $newByte = (($currentByte << $shift) & 0xFF) >> (8 - $batchSize);
+            if ($batchSize >= (8 - $shift)) {
+                $currentByte = array_shift($sourceBytes);
+                $lowBits = $currentByte >> (8 - $shift) >> (8 - $batchSize);
+                $newByte = $newByte | $lowBits;
+            }
+
+            $newStr .= chr($newByte);
+
+            $readBits += $batchSize;
+            $shift = ($shift + $batchSize) % 8;
+        }
+
+        $this->setLastByte($currentByte);
+        $this->setShift($shift);
+
+        $fullBytes = $this->getFullSize(strlen($newStr));
+        $newStr = $this->fitTo($newStr, $fullBytes, $endian);
+
+        return Packer::unpack(
+            Packer::getFormat('int', $fullBytes * 8, $signed, $endian),
+            $newStr
+        );
     }
 }

@@ -21,6 +21,11 @@ class ByteBuffer
     private $position;
 
     /**
+     * @var string Is machine order Big or Little endian.
+     */
+    private static $machineEndian;
+
+    /**
      * @param string $string
      */
     public function __construct($string = '')
@@ -81,6 +86,10 @@ class ByteBuffer
      */
     public function read($bytesCount)
     {
+        if ($bytesCount <= 0) {
+            return '';
+        }
+
         if ($this->canRead($bytesCount)) {
             $this->position += $bytesCount;
             return fread($this->handle, $bytesCount);
@@ -108,16 +117,21 @@ class ByteBuffer
      */
     public function readInt($bytes = 1, $signed = false, $endian = 'm')
     {
+        if ($endian == 'm') {
+            $endian = $this->getMachineEndian();
+        }
+
         $bytes = min($bytes, 8);
 
         if ($bytes > 4 && !$this->can64()) {
             throw new \LengthException('Your system not support 64 bit integers.');
         }
 
-        $data = $this->fitTo($this->read($bytes), $this->getFullSize($bytes), $endian);
+        $fullBytes = $this->getFullSize($bytes);
+        $data = $this->fitTo($this->read($bytes), $fullBytes, $endian);
 
         return Packer::unpack(
-            Packer::getFormat('int', $bytes * 8, $signed, $endian),
+            Packer::getFormat('int', $fullBytes * 8, $signed, $endian),
             $data
         );
     }
@@ -173,6 +187,17 @@ class ByteBuffer
         }
 
         return $bytes;
+    }
+
+    protected function getMachineEndian()
+    {
+        if (self::$machineEndian) {
+            return self::$machineEndian;
+        }
+
+        $testInt = 0x00FF;
+        $p = pack('S', $testInt);
+        return $testInt === current(unpack('v', $p)) ? 'l' : 'b';
     }
 
 }

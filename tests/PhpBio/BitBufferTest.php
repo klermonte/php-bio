@@ -30,8 +30,13 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
             [4, 16, 0, 'b', 0x8A5B],
             [14, 16, 0, 'l', 0b0101000001101100],
             [14, 16, 0, 'b', 0b0110110001010000],
-            [10, 10, 0, 'l', 0b0], // left padded
-            [10, 10, 0, 'b', 0b0], // right padded
+            [10, 10, 0, 'l', 0b0000001110010110],
+            [10, 10, 0, 'b', 0b0000001001011011],
+
+            [0,  10, 0, 'l', 0b0000001011111000],
+            [0,  10, 0, 'b', 0b0000001111100010],
+
+
 //            [20, 12, 0, 'l', 0x],
 
             // within one entire byte
@@ -45,7 +50,7 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
             // less or equal one byte across 2 bytes
             [1, 8, 0, 'l', 0b11110001],
             [4, 8, 0, 'l', 0x8A],
-            [4, 6, 0, 'l', 0b100010],
+            [4, 6, 0, 'l', 0b00100010],
 
             // 2 entire bytes
             [0, 16, 0, 'l', 0xA5F8],
