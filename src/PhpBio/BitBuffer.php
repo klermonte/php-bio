@@ -70,7 +70,6 @@ class BitBuffer extends ByteBuffer
         }
 
         $shift = $this->getShift();
-        $bitsLeft = 8 - $shift;
         $highByteSize = $bitsToRead % 8;
 
         if (!$highByteSize && !$shift) {
@@ -83,7 +82,7 @@ class BitBuffer extends ByteBuffer
             $lastByte = $this->getLastByte();
         }
 
-        $bytesToRead = (int) ceil(($bitsToRead - $bitsLeft) / 8);
+        $bytesToRead = (int) ceil(($bitsToRead - (8 - $shift)) / 8);
 
         $sourceBytes = [$lastByte];
         if ($bytesToRead) {
