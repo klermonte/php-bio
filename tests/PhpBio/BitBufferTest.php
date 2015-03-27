@@ -64,7 +64,9 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
             [20, 20, 0, 'l', 0x0D2C14],
             [20, 20, 0, 'b', 0x0142CD],
 
-
+            // end of file
+            [60, 20, 0, 'l', 0x0AB004],
+            [60, 20, 0, 'b', 0x004B0A],
 
         ];
     }
