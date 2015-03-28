@@ -66,7 +66,7 @@ class BitBuffer extends ByteBuffer
         }
 
         if ($endian == 'm') {
-            $endian = $this->getMachineEndian();
+            $endian = self::getMachineEndian();
         }
 
         $shift = $this->getShift();

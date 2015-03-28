@@ -24,7 +24,7 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
 
     public function values()
     {
-        return [
+        $cases = [
             // within one entire byte
             [0, 8, 0, 'l', 0xF8],
             [0, 7, 0, 'l', 0b1111100],
@@ -69,6 +69,17 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
             [60, 20, 0, 'b', 0x004B0A],
 
         ];
+
+        if (PHP_INT_SIZE == 8) {
+            $cases = array_merge($cases, [
+                [ 0, 60, 0, 'b', 0x0F8A5B142CD0139D],
+                [ 0, 60, 0, 'l', 0x0D3901CD42B1A5F8],
+                [20, 40, 0, 'b', 0x000000142CD0139D],
+                [20, 40, 0, 'l', 0x0000009D13D02C14],
+            ]);
+        }
+
+        return $cases;
     }
 
     /**

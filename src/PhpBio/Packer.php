@@ -55,6 +55,15 @@ class Packer
         ]
     ];
 
+    private static $fallBackFormats = [
+        'P' => 'V2',
+        'J' => 'N2',
+        'Q' => [
+            'l' => 'V2',
+            'b' => 'N2'
+        ]
+    ];
+
     /**
      * @param string $format
      * @param string $data
@@ -62,7 +71,22 @@ class Packer
      */
     public static function unpack($format, $data)
     {
-        list(, $result) = unpack($format, $data);
+        if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
+            $format = self::$fallBackFormats[$format];
+            if (is_array($format)) {
+                $format = $format[ByteBuffer::getMachineEndian()];
+            }
+            $result = unpack($format, $data);
+            if ($format == 'V2') {
+                // LE
+                $result = $result[2] * 0x100000000 + $result[1];
+            } else {
+                // BE
+                $result = $result[1] * 0x100000000 + $result[2];
+            }
+        } else {
+            list(, $result) = unpack($format, $data);
+        }
 
         return $result;
     }

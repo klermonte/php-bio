@@ -118,7 +118,7 @@ class ByteBuffer
     public function readInt($bytes = 1, $signed = false, $endian = 'm')
     {
         if ($endian == 'm') {
-            $endian = $this->getMachineEndian();
+            $endian = self::getMachineEndian();
         }
 
         $bytes = min($bytes, 8);
@@ -189,7 +189,7 @@ class ByteBuffer
         return $bytes;
     }
 
-    protected function getMachineEndian()
+    public static function getMachineEndian()
     {
         if (self::$machineEndian) {
             return self::$machineEndian;
