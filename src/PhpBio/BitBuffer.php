@@ -166,4 +166,9 @@ class BitBuffer extends ByteBuffer
             $newStr
         );
     }
+
+    public function writeInt($data, $bitsToWrite = 8, $endian = null)
+    {
+
+    }
 }
