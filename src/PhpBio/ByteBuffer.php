@@ -5,6 +5,10 @@ namespace PhpBio;
 
 class ByteBuffer
 {
+    const ENDIAN_LITTLE  = 1;
+    const ENDIAN_BIG     = 2;
+    const ENDIAN_MACHINE = 3;
+
     /**
      * @var resource
      */
@@ -23,7 +27,7 @@ class ByteBuffer
     /**
      * @var string Is machine order Big or Little endian.
      */
-    private static $machineEndian;
+    protected static $machineEndian;
 
     /**
      * @param string $string
@@ -41,6 +45,11 @@ class ByteBuffer
         $this->handle = $handle;
         $this->size = fstat($this->handle)['size'];
         $this->setPosition(0);
+
+        /**
+         * Init machine endian
+         */
+        self::$machineEndian = $this->getMachineEndian();
     }
 
     /**
@@ -112,12 +121,12 @@ class ByteBuffer
     /**
      * @param int $bytes
      * @param bool $signed
-     * @param string $endian
+     * @param int $endian
      * @return int
      */
-    public function readInt($bytes = 1, $signed = false, $endian = 'm')
+    public function readInt($bytes = 1, $signed = false, $endian = self::ENDIAN_MACHINE)
     {
-        if ($endian == 'm') {
+        if ($endian == self::ENDIAN_MACHINE) {
             $endian = self::getMachineEndian();
         }
 
@@ -139,10 +148,10 @@ class ByteBuffer
     /**
      * @param int $data
      * @param int $bytes
-     * @param string $endian
+     * @param int $endian
      * @return ByteBuffer
      */
-    public function writeInt($data, $bytes = 1, $endian = 'm')
+    public function writeInt($data, $bytes = 1, $endian = self::ENDIAN_MACHINE)
     {
         $bytes = min($bytes, 8);
 
@@ -158,6 +167,9 @@ class ByteBuffer
         return $this->write($str);
     }
 
+    /**
+     * @return bool
+     */
     protected function can64()
     {
         return PHP_INT_SIZE == 8;
@@ -171,7 +183,7 @@ class ByteBuffer
      */
     protected function fitTo($data, $fullSize, $endian)
     {
-        return str_pad($data, $fullSize, "\x00", $endian == 'b' ? STR_PAD_LEFT : STR_PAD_RIGHT);
+        return str_pad($data, $fullSize, "\x00", $endian == self::ENDIAN_BIG ? STR_PAD_LEFT : STR_PAD_RIGHT);
     }
 
     /**
@@ -189,6 +201,9 @@ class ByteBuffer
         return $bytes;
     }
 
+    /**
+     * @return int
+     */
     public static function getMachineEndian()
     {
         if (self::$machineEndian) {
@@ -197,7 +212,7 @@ class ByteBuffer
 
         $testInt = 0x00FF;
         $p = pack('S', $testInt);
-        return $testInt === current(unpack('v', $p)) ? 'l' : 'b';
+        return $testInt === current(unpack('v', $p)) ? self::ENDIAN_LITTLE : self::ENDIAN_BIG;
     }
 
 }

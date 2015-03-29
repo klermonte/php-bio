@@ -26,24 +26,24 @@ class Packer
         'int' => [
             'u' => [
                 8 => [
-                    'm' => 'C',
-                    'l' => 'C',
-                    'b' => 'C'
+                    ByteBuffer::ENDIAN_MACHINE => 'C',
+                    ByteBuffer::ENDIAN_LITTLE  => 'C',
+                    ByteBuffer::ENDIAN_BIG     => 'C'
                 ],
                 16 => [
-                    'm' => 'S',
-                    'l' => 'v',
-                    'b' => 'n'
+                    ByteBuffer::ENDIAN_MACHINE => 'S',
+                    ByteBuffer::ENDIAN_LITTLE  => 'v',
+                    ByteBuffer::ENDIAN_BIG     => 'n'
                 ],
                 32 => [
-                    'm' => 'L',
-                    'l' => 'V',
-                    'b' => 'N'
+                    ByteBuffer::ENDIAN_MACHINE => 'L',
+                    ByteBuffer::ENDIAN_LITTLE  => 'V',
+                    ByteBuffer::ENDIAN_BIG     => 'N'
                 ],
                 64 => [
-                    'm' => 'Q',
-                    'l' => 'P',
-                    'b' => 'J'
+                    ByteBuffer::ENDIAN_MACHINE => 'Q',
+                    ByteBuffer::ENDIAN_LITTLE  => 'P',
+                    ByteBuffer::ENDIAN_BIG     => 'J'
                 ]
             ],
             's' => [
@@ -58,10 +58,7 @@ class Packer
     private static $fallBackFormats = [
         'P' => 'V2',
         'J' => 'N2',
-        'Q' => [
-            'l' => 'V2',
-            'b' => 'N2'
-        ]
+        'Q' => 'L2',
     ];
 
     /**
@@ -72,12 +69,8 @@ class Packer
     public static function unpack($format, $data)
     {
         if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
-            $format = self::$fallBackFormats[$format];
-            if (is_array($format)) {
-                $format = $format[ByteBuffer::getMachineEndian()];
-            }
-            $result = unpack($format, $data);
-            if ($format == 'V2') {
+            $result = unpack(self::$fallBackFormats[$format], $data);
+            if ($format == 'P' || ($format == 'Q' && ByteBuffer::getMachineEndian() == ByteBuffer::ENDIAN_LITTLE)) {
                 // LE
                 $result = $result[2] * 0x100000000 + $result[1];
             } else {
@@ -101,7 +94,7 @@ class Packer
         return pack($format, $data);
     }
 
-    public static function getFormat($type, $length, $signed = false, $endian = 'm')
+    public static function getFormat($type, $length, $signed = false, $endian = ByteBuffer::ENDIAN_MACHINE)
     {
         $sign = $signed ? 's' : 'u';
         if (isset(self::$formatMap[$type][$sign][$length])) {
@@ -115,6 +108,6 @@ class Packer
             }
         }
 
-        throw new \InvalidArgumentException("Can't find format.");
+        throw new \InvalidArgumentException("Packer can't find format.");
     }
 }
