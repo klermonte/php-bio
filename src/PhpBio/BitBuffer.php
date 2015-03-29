@@ -111,13 +111,9 @@ class BitBuffer extends ByteBuffer
         }
 
         $readBits = 0;
-        $currentByte = null;
+        $currentByte = array_shift($sourceBytes);
         $newStr = '';
         while ($readBits < $bitsToRead) {
-
-            if ($currentByte === null) {
-                $currentByte = array_shift($sourceBytes);
-            }
 
             $batchSize = 8;
             if ($highByteSize && (($endian == self::ENDIAN_BIG && !$readBits) || ($endian == self::ENDIAN_LITTLE && ($bitsToRead - $readBits) < 8))) {
