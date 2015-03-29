@@ -72,10 +72,10 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
 
         if (PHP_INT_SIZE == 8) {
             $cases = array_merge($cases, [
-                [ 0, 60, 0, Endian::ENDIAN_BIG    , 0x0F8A5B142CD0139D],
-                [ 0, 60, 0, Endian::ENDIAN_MACHINE, 0x0D3901CD42B1A5F8],
-                [20, 40, 0, Endian::ENDIAN_BIG    , 0x000000142CD0139D],
-                [20, 40, 0, Endian::ENDIAN_MACHINE, 0x0000009D13D02C14],
+                [ 0, 60, 0, Endian::ENDIAN_BIG, 0x0F8A5B142CD0139D],
+                [ 0, 60, 0, null,               0x0D3901CD42B1A5F8],
+                [20, 40, 0, Endian::ENDIAN_BIG, 0x000000142CD0139D],
+                [20, 40, 0, null,               0x0000009D13D02C14],
             ]);
         }
 
