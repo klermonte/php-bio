@@ -8,3 +8,8 @@ tools:
   external_code_coverage:
     enabled: true
     timeout: 1800
+
+checks:
+  php:
+    code_rating: true
+    duplication: true

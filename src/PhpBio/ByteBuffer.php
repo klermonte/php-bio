@@ -25,7 +25,7 @@ class ByteBuffer
     private $position;
 
     /**
-     * @var string Is machine order Big or Little endian.
+     * @var int Is machine order Big or Little endian.
      */
     protected static $machineEndian;
 

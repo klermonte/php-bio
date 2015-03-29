@@ -92,36 +92,34 @@ class BitBuffer extends ByteBuffer
         }
 
         if (!$shift) {
-            $lastByte = ord(parent::read(1));
-        } else {
-            $lastByte = $this->getLastByte();
+            $this->setLastByte(ord(parent::read(1)));
         }
 
         $bytesToRead = (int) ceil(($bitsToRead - (8 - $shift)) / 8);
 
-        $sourceBytes = [$lastByte];
+        $readBytes = [];
         if ($bytesToRead) {
             foreach (str_split(parent::read($bytesToRead)) as $byte) {
-                $sourceBytes[] = ord($byte);
+                $readBytes[] = ord($byte);
             }
         }
 
         $readBits = 0;
-        $currentByte = array_shift($sourceBytes);
+        $currentByte = $this->getLastByte();
         $newStr = '';
         while ($readBits < $bitsToRead) {
 
+            $isBigEndianHighByte    = $endian == self::ENDIAN_BIG    && !$readBits;
+            $isLittleEndianHighByte = $endian == self::ENDIAN_LITTLE && ($bitsToRead - $readBits) < 8;
+
             $batchSize = 8;
-            if ($highByteSize && (
-                    ($endian == self::ENDIAN_BIG && !$readBits) ||
-                    ($endian == self::ENDIAN_LITTLE && ($bitsToRead - $readBits) < 8)
-                )) {
+            if ($highByteSize && ($isBigEndianHighByte || $isLittleEndianHighByte)) {
                 $batchSize = $highByteSize;
             }
 
             $newByte = (($currentByte << $shift) & 0xFF) >> (8 - $batchSize);
             if ($batchSize >= (8 - $shift)) {
-                $currentByte = array_shift($sourceBytes);
+                $currentByte = array_shift($readBytes);
                 $lowBits = $currentByte >> (8 - $shift) >> (8 - $batchSize);
                 $newByte = $newByte | $lowBits;
             }
