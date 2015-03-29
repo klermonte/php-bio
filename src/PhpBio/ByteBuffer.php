@@ -126,14 +126,16 @@ class ByteBuffer
      */
     public function readInt($bytes = 1, $signed = false, $endian = self::ENDIAN_MACHINE)
     {
-        if ($endian == self::ENDIAN_MACHINE) {
-            $endian = self::getMachineEndian();
+        if ($bytes > 8) {
+            throw new \LengthException("Can't read integer larger 64 bit.");
         }
-
-        $bytes = min($bytes, 8);
 
         if ($bytes > 4 && !$this->can64()) {
             throw new \LengthException('Your system not support 64 bit integers.');
+        }
+
+        if ($endian == self::ENDIAN_MACHINE) {
+            $endian = self::getMachineEndian();
         }
 
         $fullBytes = $this->getFullSize($bytes);
@@ -153,7 +155,9 @@ class ByteBuffer
      */
     public function writeInt($data, $bytes = 1, $endian = self::ENDIAN_MACHINE)
     {
-        $bytes = min($bytes, 8);
+        if ($bytes > 8) {
+            throw new \LengthException("Can't write integer larger 64 bit.");
+        }
 
         if ($bytes > 4 && !$this->can64()) {
             throw new \LengthException('Your system not support 64 bit integers.');
