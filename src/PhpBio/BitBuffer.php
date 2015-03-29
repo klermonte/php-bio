@@ -16,13 +16,6 @@ class BitBuffer extends ByteBuffer
      */
     private $shift;
 
-    public function __construct($string = '')
-    {
-        parent::__construct($string);
-        $this->lastByte = 0;
-        $this->setShift(0);
-    }
-
     /**
      * @return int
      */
@@ -52,6 +45,32 @@ class BitBuffer extends ByteBuffer
     public function setLastByte($lastByte)
     {
         $this->lastByte = $lastByte;
+    }
+
+    /**
+     * @param int $position
+     * @return $this
+     */
+    public function setPosition($position)
+    {
+        parent::setPosition(floor($position / 8));
+
+        $shift = $position % 8;
+        $this->setShift($shift);
+
+        if ($shift) {
+            $this->setLastByte(ord(parent::read(1)));
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPosition()
+    {
+        return parent::getPosition() + $this->getShift();
     }
     
 

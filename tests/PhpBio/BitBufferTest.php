@@ -90,7 +90,7 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
         $bitBuffer = new BitBuffer($this->source);
 
         if ($offset) {
-            $bitBuffer->readInt($offset);
+            $bitBuffer->setPosition($offset);
         }
 
         $this->assertSame($result, $bitBuffer->readInt($bitCount, $signed, $endian));
