@@ -72,18 +72,14 @@ class BitBuffer extends ByteBuffer
     {
         return parent::getPosition() + $this->getShift();
     }
-    
 
-    public function readInt($bitsToRead = 8, $signed = false, $endian = self::ENDIAN_MACHINE)
+    /**
+     * @param int $bitsToRead
+     * @param int $endian
+     * @return string
+     */
+    public function read($bitsToRead = 8, $endian = self::ENDIAN_MACHINE)
     {
-        if ($bitsToRead > 64) {
-            throw new \LengthException("Can't read integer larger 64 bit.");
-        }
-
-        if ($bitsToRead > 32 && !$this->can64()) {
-            throw new \LengthException('Your system not support 64 bit integers.');
-        }
-
         if ($endian == self::ENDIAN_MACHINE) {
             $endian = self::getMachineEndian();
         }
@@ -92,11 +88,11 @@ class BitBuffer extends ByteBuffer
         $highByteSize = $bitsToRead % 8;
 
         if (!$highByteSize && !$shift) {
-            return parent::readInt($bitsToRead / 8, $signed, $endian);
+            return parent::read($bitsToRead / 8);
         }
 
         if (!$shift) {
-            $lastByte = ord($this->read(1));
+            $lastByte = ord(parent::read(1));
         } else {
             $lastByte = $this->getLastByte();
         }
@@ -105,7 +101,7 @@ class BitBuffer extends ByteBuffer
 
         $sourceBytes = [$lastByte];
         if ($bytesToRead) {
-            foreach (str_split($this->read($bytesToRead)) as $byte) {
+            foreach (str_split(parent::read($bytesToRead)) as $byte) {
                 $sourceBytes[] = ord($byte);
             }
         }
@@ -116,7 +112,10 @@ class BitBuffer extends ByteBuffer
         while ($readBits < $bitsToRead) {
 
             $batchSize = 8;
-            if ($highByteSize && (($endian == self::ENDIAN_BIG && !$readBits) || ($endian == self::ENDIAN_LITTLE && ($bitsToRead - $readBits) < 8))) {
+            if ($highByteSize && (
+                    ($endian == self::ENDIAN_BIG && !$readBits) ||
+                    ($endian == self::ENDIAN_LITTLE && ($bitsToRead - $readBits) < 8)
+                )) {
                 $batchSize = $highByteSize;
             }
 
@@ -135,6 +134,31 @@ class BitBuffer extends ByteBuffer
 
         $this->setLastByte($currentByte);
         $this->setShift($shift);
+
+        return $newStr;
+    }
+
+    /**
+     * @param int $bitsToRead
+     * @param bool $signed
+     * @param int $endian
+     * @return int
+     */
+    public function readInt($bitsToRead = 8, $signed = false, $endian = self::ENDIAN_MACHINE)
+    {
+        if ($bitsToRead > 64) {
+            throw new \LengthException("Can't read integer larger 64 bit.");
+        }
+
+        if ($bitsToRead > 32 && !$this->can64()) {
+            throw new \LengthException('Your system not support 64 bit integers.');
+        }
+
+        if ($endian == self::ENDIAN_MACHINE) {
+            $endian = self::getMachineEndian();
+        }
+
+        $newStr = $this->read($bitsToRead, $endian);
 
         $fullBytes = $this->getFullSize(strlen($newStr));
         $newStr = $this->fitTo($newStr, $fullBytes, $endian);
