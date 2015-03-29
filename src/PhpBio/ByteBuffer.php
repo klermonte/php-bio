@@ -5,9 +5,10 @@ namespace PhpBio;
 
 class ByteBuffer
 {
-    const ENDIAN_LITTLE  = 1;
-    const ENDIAN_BIG     = 2;
-    const ENDIAN_MACHINE = 3;
+    /**
+     * @var int Endian for current buffer instance.
+     */
+    protected $endian;
 
     /**
      * @var resource
@@ -25,14 +26,10 @@ class ByteBuffer
     private $position;
 
     /**
-     * @var int Is machine order Big or Little endian.
-     */
-    protected static $machineEndian;
-
-    /**
      * @param string $string
+     * @param null $endian
      */
-    public function __construct($string = '')
+    public function __construct($string = '', $endian = null)
     {
         if (!is_resource($string)) {
             $handle = fopen('php://memory', 'br+');
@@ -44,12 +41,12 @@ class ByteBuffer
 
         $this->handle = $handle;
         $this->size = fstat($this->handle)['size'];
-        $this->setPosition(0);
 
-        /**
-         * Init machine endian
-         */
-        self::$machineEndian = $this->getMachineEndian();
+        if ($endian === null) {
+            $endian = Endian::getMachineEndian();
+        }
+
+        $this->setPosition(0)->setEndian($endian);
     }
 
     /**
@@ -78,6 +75,25 @@ class ByteBuffer
     public function getSize()
     {
         return $this->size;
+    }
+
+    /**
+     * @return int
+     */
+    public function getEndian()
+    {
+        return $this->endian;
+    }
+
+    /**
+     * @param int $endian
+     * @return $this
+     */
+    public function setEndian($endian)
+    {
+        $this->endian = $endian;
+
+        return $this;
     }
 
     /**
@@ -124,7 +140,7 @@ class ByteBuffer
      * @param int $endian
      * @return int
      */
-    public function readInt($bytes = 1, $signed = false, $endian = self::ENDIAN_MACHINE)
+    public function readInt($bytes = 1, $signed = false, $endian = null)
     {
         if ($bytes > 8) {
             throw new \LengthException("Can't read integer larger 64 bit.");
@@ -134,8 +150,8 @@ class ByteBuffer
             throw new \LengthException('Your system not support 64 bit integers.');
         }
 
-        if ($endian == self::ENDIAN_MACHINE) {
-            $endian = self::getMachineEndian();
+        if ($endian === null) {
+            $endian = $this->getEndian();
         }
 
         $fullBytes = $this->getFullSize($bytes);
@@ -153,7 +169,7 @@ class ByteBuffer
      * @param int $endian
      * @return ByteBuffer
      */
-    public function writeInt($data, $bytes = 1, $endian = self::ENDIAN_MACHINE)
+    public function writeInt($data, $bytes = 1, $endian = null)
     {
         if ($bytes > 8) {
             throw new \LengthException("Can't write integer larger 64 bit.");
@@ -161,6 +177,10 @@ class ByteBuffer
 
         if ($bytes > 4 && !$this->can64()) {
             throw new \LengthException('Your system not support 64 bit integers.');
+        }
+
+        if ($endian === null) {
+            $endian = $this->getEndian();
         }
 
         $str = Packer::pack(
@@ -187,7 +207,7 @@ class ByteBuffer
      */
     protected function fitTo($data, $fullSize, $endian)
     {
-        return str_pad($data, $fullSize, "\x00", $endian == self::ENDIAN_BIG ? STR_PAD_LEFT : STR_PAD_RIGHT);
+        return str_pad($data, $fullSize, "\x00", $endian == Endian::ENDIAN_BIG ? STR_PAD_LEFT : STR_PAD_RIGHT);
     }
 
     /**
@@ -204,19 +224,4 @@ class ByteBuffer
 
         return $bytes;
     }
-
-    /**
-     * @return int
-     */
-    public static function getMachineEndian()
-    {
-        if (self::$machineEndian) {
-            return self::$machineEndian;
-        }
-
-        $testInt = 0x00FF;
-        $p = pack('S', $testInt);
-        return $testInt === current(unpack('v', $p)) ? self::ENDIAN_LITTLE : self::ENDIAN_BIG;
-    }
-
 }

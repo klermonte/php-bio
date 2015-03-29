@@ -26,24 +26,20 @@ class Packer
         'int' => [
             'u' => [
                 8 => [
-                    ByteBuffer::ENDIAN_MACHINE => 'C',
-                    ByteBuffer::ENDIAN_LITTLE  => 'C',
-                    ByteBuffer::ENDIAN_BIG     => 'C'
+                    Endian::ENDIAN_LITTLE  => 'C',
+                    Endian::ENDIAN_BIG     => 'C'
                 ],
                 16 => [
-                    ByteBuffer::ENDIAN_MACHINE => 'S',
-                    ByteBuffer::ENDIAN_LITTLE  => 'v',
-                    ByteBuffer::ENDIAN_BIG     => 'n'
+                    Endian::ENDIAN_LITTLE  => 'v',
+                    Endian::ENDIAN_BIG     => 'n'
                 ],
                 32 => [
-                    ByteBuffer::ENDIAN_MACHINE => 'L',
-                    ByteBuffer::ENDIAN_LITTLE  => 'V',
-                    ByteBuffer::ENDIAN_BIG     => 'N'
+                    Endian::ENDIAN_LITTLE  => 'V',
+                    Endian::ENDIAN_BIG     => 'N'
                 ],
                 64 => [
-                    ByteBuffer::ENDIAN_MACHINE => 'Q',
-                    ByteBuffer::ENDIAN_LITTLE  => 'P',
-                    ByteBuffer::ENDIAN_BIG     => 'J'
+                    Endian::ENDIAN_LITTLE  => 'P',
+                    Endian::ENDIAN_BIG     => 'J'
                 ]
             ],
             's' => [
@@ -58,7 +54,6 @@ class Packer
     private static $fallBackFormats = [
         'P' => 'V2',
         'J' => 'N2',
-        'Q' => 'L2',
     ];
 
     /**
@@ -70,7 +65,7 @@ class Packer
     {
         if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
             $result = unpack(self::$fallBackFormats[$format], $data);
-            if ($format == 'P' || ($format == 'Q' && ByteBuffer::getMachineEndian() == ByteBuffer::ENDIAN_LITTLE)) {
+            if ($format == 'P') {
                 // LE
                 $result = $result[2] * 0x100000000 + $result[1];
             } else {
@@ -87,14 +82,14 @@ class Packer
     /**
      * @param string $format
      * @param string $data
-     * @return int|string
+     * @return string
      */
     public static function pack($format, $data)
     {
         return pack($format, $data);
     }
 
-    public static function getFormat($type, $length, $signed = false, $endian = ByteBuffer::ENDIAN_MACHINE)
+    public static function getFormat($type, $length, $signed = false, $endian)
     {
         $sign = $signed ? 's' : 'u';
         if (isset(self::$formatMap[$type][$sign][$length])) {

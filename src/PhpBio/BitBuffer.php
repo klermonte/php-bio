@@ -78,10 +78,10 @@ class BitBuffer extends ByteBuffer
      * @param int $endian
      * @return string
      */
-    public function read($bitsToRead = 8, $endian = self::ENDIAN_MACHINE)
+    public function read($bitsToRead = 8, $endian = null)
     {
-        if ($endian == self::ENDIAN_MACHINE) {
-            $endian = self::getMachineEndian();
+        if ($endian === null) {
+            $endian = $this->getEndian();
         }
 
         $shift = $this->getShift();
@@ -109,8 +109,8 @@ class BitBuffer extends ByteBuffer
         $newStr = '';
         while ($readBits < $bitsToRead) {
 
-            $isBigEndianHighByte    = $endian == self::ENDIAN_BIG    && !$readBits;
-            $isLittleEndianHighByte = $endian == self::ENDIAN_LITTLE && ($bitsToRead - $readBits) < 8;
+            $isBigEndianHighByte    = $endian == Endian::ENDIAN_BIG    && !$readBits;
+            $isLittleEndianHighByte = $endian == Endian::ENDIAN_LITTLE && ($bitsToRead - $readBits) < 8;
 
             $batchSize = 8;
             if ($highByteSize && ($isBigEndianHighByte || $isLittleEndianHighByte)) {
@@ -142,7 +142,7 @@ class BitBuffer extends ByteBuffer
      * @param int $endian
      * @return int
      */
-    public function readInt($bitsToRead = 8, $signed = false, $endian = self::ENDIAN_MACHINE)
+    public function readInt($bitsToRead = 8, $signed = false, $endian = null)
     {
         if ($bitsToRead > 64) {
             throw new \LengthException("Can't read integer larger 64 bit.");
@@ -152,8 +152,8 @@ class BitBuffer extends ByteBuffer
             throw new \LengthException('Your system not support 64 bit integers.');
         }
 
-        if ($endian == self::ENDIAN_MACHINE) {
-            $endian = self::getMachineEndian();
+        if ($endian === null) {
+            $endian = $this->getEndian();
         }
 
         $newStr = $this->read($bitsToRead, $endian);
