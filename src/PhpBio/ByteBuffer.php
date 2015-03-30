@@ -63,7 +63,7 @@ class ByteBuffer
      */
     public function setPosition($position)
     {
-        $this->position = $position;
+        $this->position = (int) $position;
         fseek($this->handle, $position);
 
         return $this;

@@ -106,10 +106,19 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
         $bitBuffer = new BitBuffer($this->empty);
 
         if ($offset) {
-            $bitBuffer->writeInt(0, $offset);
+            $bitBuffer->setPosition($offset);
         }
 
         $this->assertSame($result, $bitBuffer->writeInt($number, $bitCount, $enian));
+    }
+
+    public function testPosition()
+    {
+        $bitBuffer = new BitBuffer($this->source);
+
+        $bitBuffer->setPosition(35);
+
+        $this->assertSame(35, $bitBuffer->getPosition());
     }
 
 } 

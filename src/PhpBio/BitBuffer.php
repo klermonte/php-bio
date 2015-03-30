@@ -70,7 +70,11 @@ class BitBuffer extends ByteBuffer
      */
     public function getPosition()
     {
-        return parent::getPosition() + $this->getShift();
+        $shift = $this->getShift();
+        if ($shift) {
+            $shift -= 8;
+        }
+        return parent::getPosition() * 8 + $shift;
     }
 
     /**
