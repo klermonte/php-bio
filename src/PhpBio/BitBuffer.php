@@ -140,6 +140,56 @@ class BitBuffer extends ByteBuffer
         return $newStr;
     }
 
+    public function write($data, $bitsToWrite = 8, $endian = null)
+    {
+        if ($bitsToWrite > strlen($data) * 8) {
+            throw new \LengthException("Not enough data present to write {$bitsToWrite} bits.");
+        }
+
+        if ($endian === null) {
+            $endian = $this->getEndian();
+        }
+
+        $shift = $this->getShift();
+        $highByteSize = $bitsToWrite % 8;
+
+        if (!$highByteSize && !$shift) {
+            return parent::write($data);
+        }
+
+        $newStr = '';
+        $wroteBits = 0;
+        $currentByte = $this->getLastByte();
+        while ($wroteBits < $bitsToWrite) {
+
+            $isBigEndianHighByte    = $endian == Endian::ENDIAN_BIG    && !$wroteBits;
+            $isLittleEndianHighByte = $endian == Endian::ENDIAN_LITTLE && ($bitsToWrite - $wroteBits) < 8;
+
+            $batchSize = 8;
+            if ($highByteSize && ($isBigEndianHighByte || $isLittleEndianHighByte)) {
+                $batchSize = $highByteSize;
+            }
+
+            $lowBits = (($currentByte << (8 - $batchSize)) & 0xFF) >> $shift;
+            $newByte = $currentByte | $lowBits;
+
+            if ($batchSize >= (8 - $shift)) {
+                $currentByte = array_shift($readBytes);
+            }
+
+            $newStr .= chr($newByte);
+
+            $wroteBits += $batchSize;
+            $shift = ($shift + $batchSize) % 8;
+        }
+
+        $this->setLastByte($currentByte);
+        $this->setShift($shift);
+
+        return parent::write($newStr);
+
+    }
+
     /**
      * @param int $bitsToRead
      * @param bool $signed
@@ -173,6 +223,23 @@ class BitBuffer extends ByteBuffer
 
     public function writeInt($data, $bitsToWrite = 8, $endian = null)
     {
+        if ($bitsToWrite > 64) {
+            throw new \LengthException("Can't read integer larger 64 bit.");
+        }
 
+        if ($bitsToWrite > 32 && !$this->can64()) {
+            throw new \LengthException('Your system not support 64 bit integers.');
+        }
+
+        if ($endian === null) {
+            $endian = $this->getEndian();
+        }
+
+//        $fullBytes = $this->getFullSize(strlen($newStr));
+
+//        $string = Packer::pack(
+//            Packer::getFormat('int', $fullBytes * 8, false, $endian),
+//            $data
+//        );
     }
 }
