@@ -164,12 +164,12 @@ class ByteBuffer
     }
 
     /**
-     * @param int $data
+     * @param int $int
      * @param int $bytes
      * @param int $endian
      * @return ByteBuffer
      */
-    public function writeInt($data, $bytes = 1, $endian = null)
+    public function writeInt($int, $bytes = 1, $endian = null)
     {
         if ($bytes > 8) {
             throw new \LengthException("Can't write integer larger 64 bit.");
@@ -185,7 +185,7 @@ class ByteBuffer
 
         $str = Packer::pack(
             Packer::getFormat('int', $bytes * 8, false, $endian),
-            $data
+            $int
         );
 
         return $this->write($str);
