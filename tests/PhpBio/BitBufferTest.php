@@ -11,8 +11,8 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->source = "\xF8" . // 1111 1000
-                        "\xA5" . // 1010 0101
-                        "\xB1" . // 1011 0001
+                        "\xA5" . // 10|10 0101   BE: 00000010 01011011
+                        "\xB1" . // 1011| 0001   LE: 00000011 10010110
                         "\x42" . // 0100 0010
                         "\xCD" . // 1100 1101
                         "\x01" . // 0000 0001
@@ -57,10 +57,10 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
             [0,  10, 0, Endian::ENDIAN_BIG,    0b0000001111100010, "\xF8\x80\x00\x00\x00\x00\x00\x00\x00\x00"],
 
             // 2 entire bytes
-//            [0,  16, 0, null,               0xA5F8, "\xF8\xA5\x00\x00\x00\x00\x00\x00\x00\x00"],
-//            [0,  16, 0, Endian::ENDIAN_BIG, 0xF8A5, "\xF8\xA5\x00\x00\x00\x00\x00\x00\x00\x00"],
-//            [16, 16, 0, null,               0x42B1, "\x00\x00\xB1\x42\x00\x00\x00\x00\x00\x00"],
-//            [16, 16, 0, Endian::ENDIAN_BIG, 0xB142, "\x00\x00\xB1\x42\x00\x00\x00\x00\x00\x00"],
+            [0,  16, 0, null,               0xA5F8, "\xF8\xA5\x00\x00\x00\x00\x00\x00\x00\x00"],
+            [0,  16, 0, Endian::ENDIAN_BIG, 0xF8A5, "\xF8\xA5\x00\x00\x00\x00\x00\x00\x00\x00"],
+            [16, 16, 0, null,               0x42B1, "\x00\x00\xB1\x42\x00\x00\x00\x00\x00\x00"],
+            [16, 16, 0, Endian::ENDIAN_BIG, 0xB142, "\x00\x00\xB1\x42\x00\x00\x00\x00\x00\x00"],
 
             // from 2 to 3 bytes across
             [20, 20, 0, null,               0x0D2C14, "\x00\x00\x01\x42\xCD\x00\x00\x00\x00\x00"],
@@ -112,7 +112,12 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
         $bitBuffer->writeInt($number, $bitCount, $enian);
         $bitBuffer->setPosition(0);
 
-        $this->assertSame($result, $bitBuffer->read(80));
+        $read = $bitBuffer->read(80);
+
+        $messge = 'expect: ' . self::readable($result) . PHP_EOL .
+                  'actual: ' . self::readable($read);
+
+        $this->assertSame($result, $read, $messge);
     }
 
     public function testPosition()
@@ -152,7 +157,22 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
 
         $bitBuffer->setPosition(0);
 
-        $this->assertSame($this->source, $bitBuffer->read(80));
+        $read = $bitBuffer->read(80);
+
+        $message = 'expect: ' . self::readable($this->source) . PHP_EOL .
+                   'actual: ' . self::readable($read);
+
+        $this->assertSame($this->source, $read, $message);
+    }
+
+    public static function readable($string)
+    {
+        $return = [];
+        foreach (str_split($string) as $byte) {
+            $return[] = str_pad(base_convert(ord($byte), 10, 2), 8, '0', STR_PAD_LEFT);
+        }
+
+        return implode(' ', $return);
     }
 
 } 

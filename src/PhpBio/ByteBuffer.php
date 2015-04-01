@@ -131,6 +131,11 @@ class ByteBuffer
     {
         $this->position += strlen($bytes);
         fwrite($this->handle, $bytes);
+
+        if ($this->position > $this->size) {
+            $this->size = $this->position;
+        }
+
         return $this;
     }
 
@@ -207,7 +212,12 @@ class ByteBuffer
      */
     protected function fitTo($data, $fullSize, $endian)
     {
-        return str_pad($data, $fullSize, "\x00", $endian == Endian::ENDIAN_BIG ? STR_PAD_LEFT : STR_PAD_RIGHT);
+        if ($fullSize > strlen($data)) {
+            $data = str_pad($data, $fullSize, "\x00", $endian == Endian::ENDIAN_BIG ? STR_PAD_LEFT : STR_PAD_RIGHT);
+        } else {
+            $data = substr($data, ($endian == Endian::ENDIAN_LITTLE ? 0 : -$fullSize), $fullSize);
+        }
+        return $data;
     }
 
     /**

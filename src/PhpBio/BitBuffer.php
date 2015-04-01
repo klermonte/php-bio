@@ -157,23 +157,22 @@ class BitBuffer extends ByteBuffer
             return parent::write($data);
         }
 
-        $bytesToWrite = [];
-        foreach (str_split($data) as $byte) {
-            $bytesToWrite[] = ord($byte);
-        }
-
         if ($shift) {
             parent::setPosition(parent::getPosition() - 1);
         }
 
-        $newStr = '';
-        $wroteBytes = 0;
-        $lastByte = $this->getLastByte();
-        $countBytesToBeWrote = ceil(($bitsToWrite + $shift) / 8);
-        while ($wroteBytes < $countBytesToBeWrote) {
+        $sourceBytes = [];
+        foreach (str_split($data) as $byte) {
+            $sourceBytes[] = ord($byte);
+        }
 
-            $isBigEndianHighByte    = $endian == Endian::ENDIAN_BIG    && !$wroteBytes;
-            $isLittleEndianHighByte = $endian == Endian::ENDIAN_LITTLE && 0/*($bitsToWrite - $wroteBits) < 8*/;
+        $newStr = '';
+        $lastByte = $this->getLastByte();
+        $currentByte = null;
+        while (!empty($sourceBytes)) {
+
+            $isBigEndianHighByte    = $endian == Endian::ENDIAN_BIG    && $currentByte === null;
+            $isLittleEndianHighByte = $endian == Endian::ENDIAN_LITTLE && count($sourceBytes) == 1;
 
             $batchSize = 8;
             if ($highByteSize && ($isBigEndianHighByte || $isLittleEndianHighByte)) {
@@ -181,28 +180,28 @@ class BitBuffer extends ByteBuffer
             }
 
             $newByte = $lastByte >> (8 - $shift) << (8 - $shift);
-            $currentByte = array_shift($bytesToWrite);
+            $currentByte = array_shift($sourceBytes);
             $lowBits = ($currentByte << (8 - $batchSize) & 0xFF) >> $shift;
             $newByte = $newByte | $lowBits;
 
-
-            if ($batchSize > (8 - $shift)) {
+            if ($batchSize >= (8 - $shift)) {
+                $newStr .= chr($newByte);
                 $lastByte = ($currentByte << (8 - $shift) & 0xFF) << (8 - $batchSize);
             } else {
                 $lastByte = $newByte;
             }
 
-            $newStr .= chr($newByte);
-
-            $wroteBytes += 1;
             $shift = ($shift + $batchSize) % 8;
         }
 
         $this->setLastByte($lastByte);
         $this->setShift($shift);
 
-        return parent::write($newStr);
+        if ($shift) {
+            $newStr .= chr($lastByte);
+        }
 
+        return parent::write($newStr);
     }
 
     /**
@@ -250,12 +249,15 @@ class BitBuffer extends ByteBuffer
             $endian = $this->getEndian();
         }
 
-        $fullBytes = $this->getFullSize(ceil($bitsToWrite / 8));
+        $actualBytes = ceil($bitsToWrite / 8);
+        $fullBytes = $this->getFullSize($actualBytes);
 
         $string = Packer::pack(
             Packer::getFormat('int', $fullBytes * 8, false, $endian),
             $int
         );
+
+        $string = $this->fitTo($string, $actualBytes, $endian);
 
         return $this->write($string, $bitsToWrite, $endian);
     }
