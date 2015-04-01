@@ -83,7 +83,24 @@ class Packer
      */
     public static function pack($format, $data)
     {
-        return pack($format, $data);
+        if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
+
+            $subFormat = self::$fallBackFormats[$format][0];
+
+            $highStr = pack($subFormat, $data >> 32);
+            $lowStr = pack($subFormat, $data & 0xFFFFFFFF);
+            if ($format == 'P') {
+                // LE
+                $result = $lowStr . $highStr;
+            } else {
+                // BE
+                $result = $highStr . $lowStr;
+            }
+        } else {
+            $result = pack($format, $data);
+        }
+
+        return $result;
     }
 
     public static function getFormat($type, $length, $signed = false, $endian)
