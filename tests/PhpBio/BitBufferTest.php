@@ -165,6 +165,50 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
         $this->assertSame($this->source, $read, $message);
     }
 
+    public function testEmptyWrite()
+    {
+        $bitBuffer = new BitBuffer;
+        $bitBuffer->writeInt(1, 4);
+        $bitBuffer->writeInt(128, 8);
+        $bitBuffer->writeInt(1, 1);
+
+        $bitBuffer->setPosition(0);
+
+        $read = $bitBuffer->read($bitBuffer->getSize() * 8);
+
+        $expected = "\x18\x08";
+
+        $message = 'expect: ' . self::readable($expected) . PHP_EOL .
+                   'actual: ' . self::readable($read);
+
+        $this->assertSame($expected, $read, $message);
+    }
+
+    public function testUpdate()
+    {
+        $bitBuffer = new BitBuffer("\xFF\xFF\xFF\xFF\xFF");
+        $bitBuffer->setPosition(12)
+            ->writeInt(0, 14)
+            ->setPosition(0);
+
+        $read = $bitBuffer->read($bitBuffer->getSize() * 8);
+        $expected = "\xFF\xF0\x00\x3F\xFF";
+
+        $message = 'expect: ' . self::readable($expected) . PHP_EOL .
+                   'actual: ' . self::readable($read);
+
+        $this->assertSame($expected, $read, $message);
+    }
+
+    /**
+     * @expectedException \OutOfBoundsException
+     */
+    public function testInvalidOffset()
+    {
+        $bitBuffer = new BitBuffer("\xFF");
+        $bitBuffer->setPosition(10);
+    }
+
     public static function readable($string)
     {
         $return = [];
