@@ -49,8 +49,8 @@ class Packer
     ];
 
     private static $fallBackFormats = [
-        'P' => 'V2',
-        'J' => 'N2',
+        'P' => 'V',
+        'J' => 'N',
     ];
 
     /**
@@ -61,13 +61,13 @@ class Packer
     public static function unpack($format, $data)
     {
         if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
-            $result = unpack(self::$fallBackFormats[$format], $data);
+            $result = unpack(self::$fallBackFormats[$format] . 2, $data);
             if ($format == 'P') {
                 // LE
-                $result = $result[2] * 0x100000000 + $result[1];
+                $result = $result[2] << 32 | $result[1];
             } else {
                 // BE
-                $result = $result[1] * 0x100000000 + $result[2];
+                $result = $result[1] << 32 | $result[2];
             }
         } else {
             list(, $result) = unpack($format, $data);
@@ -85,7 +85,7 @@ class Packer
     {
         if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
 
-            $subFormat = self::$fallBackFormats[$format][0];
+            $subFormat = self::$fallBackFormats[$format];
 
             $highStr = pack($subFormat, $data >> 32);
             $lowStr = pack($subFormat, $data & 0xFFFFFFFF);
