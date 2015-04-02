@@ -63,6 +63,9 @@ class ByteBuffer
      */
     public function setPosition($position)
     {
+        if ($position > $this->size) {
+            throw new \OutOfBoundsException('Exceeds the boundary of the file.');
+        }
         $this->position = (int) $position;
         fseek($this->handle, $position);
 

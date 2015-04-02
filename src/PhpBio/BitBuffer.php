@@ -157,8 +157,10 @@ class BitBuffer extends ByteBuffer
             return parent::write($data);
         }
 
+        $startPosition = parent::getPosition();
         if ($shift) {
-            parent::setPosition(parent::getPosition() - 1);
+            $startPosition -= 1;
+            parent::setPosition($startPosition);
         }
 
         $sourceBytes = [];
@@ -198,6 +200,20 @@ class BitBuffer extends ByteBuffer
         $this->setShift($shift);
 
         if ($shift) {
+
+            $lstBytePosition = $startPosition + strlen($newStr);
+
+            if (parent::canRead($lstBytePosition + 1)) {
+
+                parent::setPosition($lstBytePosition);
+                $originalLastByte = ord(parent::read(1));
+                parent::setPosition($startPosition);
+
+                $originalLastByte = (($originalLastByte << $shift) & 0xFF) >> $shift;
+
+                $lastByte |= $originalLastByte;
+            }
+
             $newStr .= chr($lastByte);
         }
 

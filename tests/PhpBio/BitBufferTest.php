@@ -187,12 +187,12 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
     public function testUpdate()
     {
         $bitBuffer = new BitBuffer("\xFF\xFF\xFF\xFF\xFF");
-        $bitBuffer->setPosition(12)
-            ->writeInt(0, 14)
+        $bitBuffer->setPosition(4)
+            ->writeInt(0, 22)
             ->setPosition(0);
 
         $read = $bitBuffer->read($bitBuffer->getSize() * 8);
-        $expected = "\xFF\xF0\x00\x3F\xFF";
+        $expected = "\xF0\x00\x00\x3F\xFF";
 
         $message = 'expect: ' . self::readable($expected) . PHP_EOL .
                    'actual: ' . self::readable($read);
@@ -206,7 +206,7 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
     public function testInvalidOffset()
     {
         $bitBuffer = new BitBuffer("\xFF");
-        $bitBuffer->setPosition(10);
+        $bitBuffer->setPosition(16);
     }
 
     public static function readable($string)
