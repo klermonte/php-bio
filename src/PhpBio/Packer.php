@@ -5,6 +5,8 @@ namespace PhpBio;
 
 class Packer
 {
+    public static $useCustom64;
+
     private static $lenthMap = [
         'c' => 1,
         'C' => 1,
@@ -60,7 +62,7 @@ class Packer
      */
     public static function unpack($format, $data)
     {
-        if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
+        if (isset(self::$fallBackFormats[$format]) && self::useCustom64()) {
             $result = unpack(self::$fallBackFormats[$format] . 2, $data);
             if ($format == 'P') {
                 // LE
@@ -83,7 +85,7 @@ class Packer
      */
     public static function pack($format, $data)
     {
-        if (isset(self::$fallBackFormats[$format]) && !version_compare(phpversion(), '5.6.3', '>=')) {
+        if (isset(self::$fallBackFormats[$format]) && self::useCustom64()) {
 
             $subFormat = self::$fallBackFormats[$format];
 
@@ -118,5 +120,13 @@ class Packer
         }
 
         throw new \InvalidArgumentException("Packer can't find format.");
+    }
+
+    /**
+     * @return bool
+     */
+    private static function useCustom64()
+    {
+        return version_compare(phpversion(), '5.6.3', '>=') && !self::$useCustom64;
     }
 }

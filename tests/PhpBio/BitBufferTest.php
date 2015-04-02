@@ -89,6 +89,22 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
      */
     public function testReadInt($offset, $bitCount, $signed, $endian, $result)
     {
+        Packer::$useCustom64 = false;
+        $bitBuffer = new BitBuffer($this->source);
+
+        if ($offset) {
+            $bitBuffer->setPosition($offset);
+        }
+
+        $this->assertSame($result, $bitBuffer->readInt($bitCount, $signed, $endian));
+    }
+
+    /**
+     * @dataProvider values
+     */
+    public function testReadIntCustom64($offset, $bitCount, $signed, $endian, $result)
+    {
+        Packer::$useCustom64 = true;
         $bitBuffer = new BitBuffer($this->source);
 
         if ($offset) {
@@ -103,6 +119,30 @@ class BitBufferTest extends PHPUnit_Framework_TestCase
      */
     public function testWriteInt($offset, $bitCount, $signed, $enian, $number, $result)
     {
+        Packer::$useCustom64 = false;
+        $bitBuffer = new BitBuffer($this->empty);
+
+        if ($offset) {
+            $bitBuffer->setPosition($offset);
+        }
+
+        $bitBuffer->writeInt($number, $bitCount, $enian);
+        $bitBuffer->setPosition(0);
+
+        $read = $bitBuffer->read(80);
+
+        $messge = 'expect: ' . self::readable($result) . PHP_EOL .
+                  'actual: ' . self::readable($read);
+
+        $this->assertSame($result, $read, $messge);
+    }
+
+    /**
+     * @dataProvider values
+     */
+    public function testWriteIntCustom64($offset, $bitCount, $signed, $enian, $number, $result)
+    {
+        Packer::$useCustom64 = true;
         $bitBuffer = new BitBuffer($this->empty);
 
         if ($offset) {
