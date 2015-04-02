@@ -127,6 +127,6 @@ class Packer
      */
     private static function useCustom64()
     {
-        return version_compare(phpversion(), '5.6.3', '>=') || self::$useCustom64;
+        return version_compare(phpversion(), '5.6.3', '<') || self::$useCustom64;
     }
 }
